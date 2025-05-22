@@ -27,7 +27,7 @@
         <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">地底迷宮機率計算機</h1>
 
         <div class="mb-6">
-            <p class="text-lg font-semibold text-gray-700 mb-3">請問你要?(請輸入代號)</p>
+            <p class="text-lg font-semibold text-gray-700 mb-3">請問你要?</p>
             <div class="flex flex-col space-y-3">
                 <label class="inline-flex items-center text-gray-700">
                     <input type="radio" name="mode" value="1" class="form-radio h-5 w-5 text-indigo-600" checked>
@@ -76,7 +76,7 @@
         </button>
 
         <div id="results" class="mt-8 p-4 bg-gray-100 rounded-lg shadow-inner max-h-96 overflow-y-auto text-gray-800 text-sm leading-relaxed">
-            <p class="text-center text-gray-500">計算結果將顯示在這裡</p>
+            <p class="text-center text-gray-500">計算結果將顯示在這裡。</p>
         </div>
 
         <div class="mt-6 text-center text-gray-600 text-sm flex items-center justify-center space-x-2">
@@ -123,10 +123,6 @@
 
         // --- 輔助函數 ---
 
-        /**
-         * 根據使用者選擇的模式，顯示或隱藏對應的輸入欄位。
-         * 這樣可以讓介面保持整潔，只顯示必要的資訊。
-         */
         function updateInputVisibility() {
             // 先隱藏所有輸入群組
             startfloorGroup.classList.add('hidden');
@@ -265,8 +261,9 @@
             const floorProbabilities = Array(MAX_FLOOR + 1).fill(null).map(() => ({}));
 
             if (currentMode === '3') {
-                // 模式 3：從第 0 層開始，0 隻貓咪損失的機率為 100%
-                floorProbabilities[0] = { 0: 100 };
+                // 模式 3：為了與原始 Python 程式碼的行為一致，將第 0 層的初始消耗貓數設定為 10。
+                // 原始 Python 程式碼中，catlist[0] 被設定為 {10: 100}。
+                floorProbabilities[0] = { 10: 100 };
             } else {
                 // 模式 1 和 2：在起始樓層，初始貓咪數量的機率為 100%
                 if (initialFloor >= 0 && initialFloor <= MAX_FLOOR) {
@@ -291,8 +288,8 @@
 
         // 監聽計算按鈕的點擊事件
         calculateBtn.addEventListener('click', () => {
-            // 清空之前的結果，並顯示預設提示訊息
-            resultsDiv.innerHTML = '<p class="text-center text-gray-500">計算結果將顯示在這裡。</p>';
+            // 清空之前的結果
+            resultsDiv.innerHTML = '';
 
             let startFloor = 0;
             let catCount = 0;
@@ -314,6 +311,7 @@
             // 輸入值驗證
             if (isNaN(startFloor) || isNaN(catCount) || (currentMode === '3' && isNaN(targetFloor))) {
                 addResult('請輸入有效的數字。', 'text-red-500');
+                // 如果有錯誤訊息，則不顯示預設提示
                 return;
             }
 
@@ -335,13 +333,19 @@
             // 初始化樓層機率分佈
             const floorProbabilities = initializeFloorProbabilities(catCount, startFloor);
             if (!floorProbabilities) {
-                return; // 如果初始化失敗，則停止計算
+                // 如果初始化失敗（例如起始樓層超出範圍），則不顯示預設提示
+                return;
             }
 
             // 主要計算循環：從起始樓層的下一層開始，逐層計算到最高樓層
             for (let i = startFloor + 1; i <= MAX_FLOOR; i++) {
                 const avgLoss = getAverageLossForFloor(i); // 取得當前樓層的平均損失
                 calculateFloorProbabilities(avgLoss, i, floorProbabilities); // 計算當前樓層的機率
+            }
+
+            // 如果計算完成後結果區塊仍然是空的，則顯示預設提示訊息
+            if (resultsDiv.children.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-center text-gray-500">計算結果將顯示在這裡。</p>';
             }
         });
 
